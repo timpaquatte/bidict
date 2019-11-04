@@ -30,9 +30,13 @@
 
 from abc import abstractmethod
 from collections.abc import Mapping
+from typing import Any, Type, Mapping as MappingType, Iterator, TypeVar, Tuple, Union
+
+KT = TypeVar('KT')
+VT = TypeVar('VT')
 
 
-class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
+class BidirectionalMapping(MappingType[KT, VT]):  # pylint: disable=abstract-method,no-init
     """Abstract base class (ABC) for bidirectional mapping types.
 
     Extends :class:`collections.abc.Mapping` primarily by adding the
@@ -51,7 +55,7 @@ class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
 
     @property
     @abstractmethod
-    def inverse(self):
+    def inverse(self) -> MappingType[VT, KT]:
         """The inverse of this bidirectional mapping instance.
 
         *See also* :attr:`bidict.BidictBase.inverse`, :attr:`bidict.BidictBase.inv`
@@ -65,7 +69,7 @@ class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
         # clear there's no reason to call this implementation (e.g. via super() after overriding).
         raise NotImplementedError
 
-    def __inverted__(self):
+    def __inverted__(self) -> Iterator[Tuple[VT, KT]]:
         """Get an iterator over the items in :attr:`inverse`.
 
         This is functionally equivalent to iterating over the items in the
@@ -96,7 +100,7 @@ class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
         return self.inverse.keys()
 
     @classmethod
-    def __subclasshook__(cls, C):  # noqa: N803 (argument name should be lowercase)
+    def __subclasshook__(cls, C: 'Type[BidirectionalMapping[Any, Any]]') -> Union[bool, 'NotImplemented']:  # noqa: N803 (argument name should be lowercase)
         """Check if *C* is a :class:`~collections.abc.Mapping`
         that also provides an ``inverse`` attribute,
         thus conforming to the :class:`BidirectionalMapping` interface,
@@ -105,10 +109,9 @@ class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
         """
         if cls is not BidirectionalMapping:  # lgtm [py/comparison-using-is]
             return NotImplemented
-        if not Mapping.__subclasshook__(C):
+        if not Mapping.__subclasshook__(C):  # type: ignore
             return NotImplemented
-        mro = C.__mro__
-        if not any(B.__dict__.get('inverse') for B in mro):
+        if not any(B.__dict__.get('inverse') for B in C.__mro__):
             return NotImplemented
         return True
 
