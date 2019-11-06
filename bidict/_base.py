@@ -30,7 +30,7 @@
 
 from functools import wraps
 from typing import (
-    AbstractSet, Any, Callable, Dict, Generic, Iterator, Mapping, Optional, Type, TypeVar,
+    AbstractSet, Any, Callable, Dict, Generic, Iterator, List, Mapping, Optional, Type, TypeVar,
     Tuple, Union,
 )
 from warnings import warn
@@ -47,7 +47,7 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-class _DedupResult(Generic[KT, VT]):
+class _BaseResult(Generic[KT, VT]):
     __slots__ = ('isdupkey', 'isdupval', 'invbyval', 'fwdbykey')
 
     def __init__(self, isdupkey: bool, isdupval: bool, invbyval: KT, fwdbykey: VT):
@@ -57,19 +57,20 @@ class _DedupResult(Generic[KT, VT]):
         self.fwdbykey = fwdbykey
 
     def __iter__(self) -> Iterator[Union[bool, KT, VT]]:
-        return iter(self._astuple())
+        return iter(self.as_tuple())
 
     def __getitem__(self, index: Union[int, slice]) -> Union[bool, KT, VT, Tuple[Union[bool, KT, VT]]]:
-        return self._astuple()[index]
+        return self.as_tuple()[index]
 
-    def __eq__(self, other):
-        return self._astuple() == other._astuple()
-
-    def _astuple(self) -> Tuple[bool, bool, KT, VT]:
-        return (self.isdupval, self.isdupval, self.invbyval, self.fwdbykey)
+    def as_tuple(self) -> Tuple[bool, bool, KT, VT]:
+        return (self.isdupkey, self.isdupval, self.invbyval, self.fwdbykey)
 
 
-class _FailedResult(_DedupResult[Any, Any]):  # TODO: temporarily changed from [_Marker, _Marker] during merge
+class _DedupResult(_BaseResult[KT, VT]):
+    pass
+
+
+class _FailedResult(_BaseResult[Any, Any]):  # TODO: temporarily changed from [_Marker, _Marker] during merge
     pass
 
 
@@ -83,12 +84,12 @@ class _WriteResult(Generic[KT, VT]):
         self.oldval = oldval
 
     def __iter__(self) -> Iterator[Union[KT, VT]]:
-        return iter(self._astuple())
+        return iter(self.as_tuple())
 
     def __getitem__(self, index: Union[int, slice]) -> Union[KT, VT, Tuple[Union[KT, VT]]]:
-        return self._astuple()[index]
+        return self.as_tuple()[index]
 
-    def _astuple(self) -> Tuple[KT, VT, KT, VT]:
+    def as_tuple(self) -> Tuple[KT, VT, KT, VT]:
         return (self.key, self.val, self.oldkey, self.oldval)
 
 
@@ -289,7 +290,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
 
     def _put(self, key: KT, val: VT, on_dup: OnDup):
         dedup_result = self._dedup_item(key, val, on_dup)
-        if dedup_result is not _NOOP:
+        if isinstance(dedup_result, _DedupResult):
             self._write_item(key, val, dedup_result)
 
     def _dedup_item(self, key: KT, val: VT, on_dup: OnDup) -> Union[_DedupResult, _Sentinel]:  # pylint: disable=too-many-branches
@@ -318,7 +319,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         isdupkey = oldval is not _MISS
         isdupval = oldkey is not _MISS
         dedup_result = _DedupResult(isdupkey, isdupval, oldkey, oldval)
-        if isdupkey and isdupval:
+        if not isinstance(oldval, _Marker) and not isinstance(oldkey, _Marker):
             if self._already_have(key, val, oldkey, oldval):
                 # (key, val) duplicates an existing item -> no-op.
                 return _NOOP
@@ -356,8 +357,8 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         assert isdup == (oldval == val), '%r %r %r %r' % (key, val, oldkey, oldval)
         return isdup
 
-    def _write_item(self, key: KT, val: VT, dedup_result: _DedupResult) -> _WriteResult[KT, VT]:
-        isdupkey, isdupval, oldkey, oldval = dedup_result
+    def _write_item(self, key: KT, val: VT, dedup_result: _BaseResult) -> _WriteResult[KT, VT]:
+        isdupkey, isdupval, oldkey, oldval = dedup_result.as_tuple()
         fwdm = self._fwdm
         invm = self._invm
         fwdm[key] = val
@@ -382,7 +383,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         else:
             self._update_with_rollback(on_dup, *args, **kw)
 
-    def _update_no_dup_check(self, other: Mapping[KT, VT], _nodup: _DedupResult = _NODUP):
+    def _update_no_dup_check(self, other: Mapping[KT, VT], _nodup: _BaseResult = _NODUP):
         write_item = self._write_item
         for (key, val) in other.items():
             write_item(key, val, _nodup)
@@ -406,14 +407,14 @@ class BidictBase(BidirectionalMapping[KT, VT]):
                 for dedup_result, write_result in reversed(writelog):
                     undo_write(dedup_result, write_result)
                 raise
-            if dedup_result is not _NOOP:
+            if isinstance(dedup_result, _DedupResult):
                 write_result = write_item(key, val, dedup_result)
                 appendlog((dedup_result, write_result))
 
     # : _WriteResult[KT, VT]):
     def _undo_write(self, dedup_result: _DedupResult, write_result: _WriteResult[KT, VT]):
-        isdupkey, isdupval, _, _ = dedup_result
-        key, val, oldkey, oldval = write_result
+        isdupkey, isdupval, _, _ = dedup_result.as_tuple()
+        key, val, oldkey, oldval = write_result.as_tuple()
         if not isdupkey and not isdupval:
             self._pop(key)
             return
