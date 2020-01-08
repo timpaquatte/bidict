@@ -122,7 +122,7 @@ matrix:
       install: 'skip'
       script: 'python3 -O -m doctest -o IGNORE_EXCEPTION_DETAIL -o ELLIPSIS tests/*.txt'
 
-    ## Linting, static analysis, code style.
+    ## Linting, type checking, code style, etc.
     - env: 'TASK=lint-flake8 INSTALL_EXTRAS=flake8'
       before_install: 'skip'
       script: 'flake8 $LINT_SRC'
@@ -134,6 +134,10 @@ matrix:
     - env: 'TASK=lint-pydocstyle INSTALL_EXTRAS=pydocstyle'
       before_install: 'skip'
       script: 'pydocstyle $LINT_SRC'
+
+    - env: 'TASK=lint-mypy INSTALL_EXTRAS=mypy'
+      before_install: 'skip'
+      script: 'mypy --strict $LINT_SRC'
 
     ## Misc.
     - env: 'TASK=docs-build INSTALL_EXTRAS=docs'

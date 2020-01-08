@@ -99,6 +99,7 @@ COVERAGE_REQS = [
 # minor versions manually to have a chance to fix any resulting breakage before it hits CI.
 FLAKE8_REQ = 'flake8 < 3.8'
 PYDOCSTYLE_REQ = 'pydocstyle < 3.1'
+MYPY_REQ = 'mypy == 0.740'
 PYLINT_REQS = [
     # Pin to exact versions of Pylint and Astroid, which don't follow semver.
     # See https://github.com/PyCQA/astroid/issues/651#issuecomment-469021040
@@ -109,6 +110,7 @@ PYLINT_REQS = [
 LINT_REQS = [
     FLAKE8_REQ,
     PYDOCSTYLE_REQ,
+    MYPY_REQ,
 ] + PYLINT_REQS
 
 DEV_REQS = SETUP_REQS + DOCS_REQS + TEST_REQS + COVERAGE_REQS + LINT_REQS + [
@@ -125,6 +127,7 @@ EXTRAS_REQS = dict(
     sphinx=SPHINX_REQS,
     flake8=[FLAKE8_REQ],
     pydocstyle=[PYDOCSTYLE_REQ],
+    mypy=[MYPY_REQ],
     pylint=PYLINT_REQS,
 )
 
