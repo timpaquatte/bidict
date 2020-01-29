@@ -25,7 +25,7 @@
 # ← Prev: _base.py         Current: _frozenbidict.py           Next: _mut.py →
 #==============================================================================
 
-"""Provides :class:`frozenbidict`, an immutable, hashable bidirectional mapping type."""
+"""Provide :class:`frozenbidict`, an immutable, hashable bidirectional mapping type."""
 
 from collections.abc import ItemsView
 
@@ -33,15 +33,15 @@ from ._base import BidictBase
 from ._delegating import _DelegatingMixin
 
 
-class frozenbidict(_DelegatingMixin, BidictBase):  # noqa: N801; pylint: disable=invalid-name
+class frozenbidict(_DelegatingMixin, BidictBase):
     """Immutable, hashable bidict type."""
 
     __slots__ = ()
 
-    def __hash__(self):  # lgtm [py/equals-hash-mismatch]
+    def __hash__(self) -> int:
         """The hash of this bidict as determined by its items."""
         if getattr(self, '_hash', None) is None:
-            # pylint: disable=protected-access,attribute-defined-outside-init
+            # pylint: disable=attribute-defined-outside-init
             self._hash = ItemsView(self)._hash()
         return self._hash
 

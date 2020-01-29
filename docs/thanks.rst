@@ -40,6 +40,8 @@ People
 
 - Richard Sanger and Zeyi Wang for reporting bugs.
 
+- Christian Gibson for help with type hints.
+
 
 Projects
 ========

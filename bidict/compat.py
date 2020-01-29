@@ -18,4 +18,3 @@ PY2 = PYMAJOR == 2  #:
 PYIMPL = python_implementation()  #:
 CPY = PYIMPL == 'CPython'  #:
 PYPY = PYIMPL == 'PyPy'  #:
-DICTS_ORDERED = PYPY or (CPY and (PYMAJOR, PYMINOR) >= (3, 6))  #:

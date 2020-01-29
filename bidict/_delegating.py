@@ -6,7 +6,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-"""Provides :class:`_DelegatingMixin`."""
+"""Provide :class:`_DelegatingMixin`."""
+
+from typing import Iterator, KeysView, ItemsView, cast
+
+from ._abc import KT, VT
+from ._base import BidictBase
 
 
 class _DelegatingMixin:
@@ -17,18 +22,18 @@ class _DelegatingMixin:
 
     __slots__ = ()
 
-    def __iter__(self):
+    def __iter__(self: BidictBase[KT, VT]) -> Iterator[KT]:
         """Iterator over the contained keys."""
-        return iter(self._fwdm)  # pylint: disable=protected-access
+        return iter(self._fwdm)
 
-    def keys(self):
+    def keys(self: BidictBase[KT, VT]) -> KeysView[KT]:
         """A set-like object providing a view on the contained keys."""
-        return self._fwdm.keys()  # pylint: disable=protected-access
+        return cast(KeysView[KT], self._fwdm.keys())
 
-    def values(self):
+    def values(self: BidictBase[KT, VT]) -> KeysView[VT]:
         """A set-like object providing a view on the contained values."""
-        return self._invm.keys()  # pylint: disable=protected-access
+        return cast(KeysView[VT], self._invm.keys())
 
-    def items(self):
+    def items(self: BidictBase[KT, VT]) -> ItemsView[KT, VT]:
         """A set-like object providing a view on the contained items."""
-        return self._fwdm.items()  # pylint: disable=protected-access
+        return cast(ItemsView[KT, VT], self._fwdm.items())

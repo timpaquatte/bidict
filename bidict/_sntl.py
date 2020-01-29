@@ -18,8 +18,12 @@ class _Sentinel(Enum):
     NOOP = 'NOOP'
 
     def __repr__(self):
-        return '<%s>' % self.name  # pragma: no cover
+        return f'<{self.name}>'  # pragma: no cover
 
 
 _MISS = _Sentinel.MISS
 _NOOP = _Sentinel.NOOP
+
+# Use typing.Literal for these once Py3.8+ required.
+T_MISS = _Sentinel
+T_NOOP = _Sentinel

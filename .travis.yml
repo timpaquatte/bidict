@@ -69,11 +69,6 @@ script:  # Run the test suite.
       export HYPOTHESIS_GEN_MAX_SIZE="32"
       export HYPOTHESIS_DEADLINE="500"
     fi
-    # Without this, pypy3 with coverage on Travis is too slow to pass reliably.
-    if [[ "$TASK" == "test-linux-pypy3" ]]; then
-      export HYPOTHESIS_MAX_EXAMPLES="100"
-      export HYPOTHESIS_GEN_MAX_SIZE="8"
-    fi
     if [[ "$COVERAGE" ]]; then
       export PYTEST_ADDOPTS="${PYTEST_ADDOPTS} --cov=bidict --cov-config=.coveragerc"
     fi
@@ -94,6 +89,10 @@ after_script:
 matrix:
   allow_failures:
     - env: 'TASK=docs-linkcheck INSTALL_EXTRAS=docs'
+    # TODO: Add type hints to tests, then remove this once mypy is succeeding:
+    - env: 'TASK=lint-mypy INSTALL_EXTRAS=mypy'
+    # TODO: Fix Python 3.6 issues, then remove this once tests are passing:
+    - env: 'TASK=test-linux-cpython-3.6'
   ## fast_finish causes Travis to send a useless daily "build pending" email; not worth the noise.
   # fast_finish: true
   include:
@@ -104,16 +103,20 @@ matrix:
 
     # Travis runs jobs in the order defined below -> order jobs by priority.
 
-    ## Test suite on Linux with latest CPython and PyPy 2 and 3 -> enable coverage.
+    ## Test suite on Linux with latest CPython 3 -> enable coverage.
     - python: '3.8'
       env: 'TASK=test-linux-cpython-3.8 COVERAGE=1'
 
-    - python: 'pypy3'
-      env: 'TASK=test-linux-pypy3 COVERAGE=1'
+    ## Remaining CPython versions on Linux.
+    - python: '3.7'
+      env: 'TASK=test-linux-cpython-3.7'
 
-    ## Test suite on Linux with Python 3.5, where dicts are unordered -> enable coverage.
-    - python: '3.5'
-      env: 'TASK=test-linux-cpython-3.5 COVERAGE=1'
+    - python: '3.6'
+      env: 'TASK=test-linux-cpython-3.6'
+
+    ## Pypy3 on Linux.
+    - python: 'pypy3'
+      env: 'TASK=test-linux-pypy3'
 
     ## Make sure there are no relied-on side effects in assert statements.
     - env: 'TASK=test-with-optimization-flag'
@@ -121,7 +124,7 @@ matrix:
       install: 'skip'
       script: 'python3 -O -m doctest -o IGNORE_EXCEPTION_DETAIL -o ELLIPSIS tests/*.txt'
 
-    ## Linting, static analysis, code style.
+    ## Linting, type checking, code style, etc.
     - env: 'TASK=lint-flake8 INSTALL_EXTRAS=flake8'
       before_install: 'skip'
       script: 'flake8 $LINT_SRC'
@@ -134,6 +137,10 @@ matrix:
       before_install: 'skip'
       script: 'pydocstyle $LINT_SRC'
 
+    - env: 'TASK=lint-mypy INSTALL_EXTRAS=mypy'
+      before_install: 'skip'
+      script: 'mypy --strict $LINT_SRC'
+
     ## Misc.
     - env: 'TASK=docs-build INSTALL_EXTRAS=docs'
       before_install: 'skip'
@@ -142,13 +149,6 @@ matrix:
     - env: 'TASK=docs-linkcheck INSTALL_EXTRAS=docs'
       before_install: 'skip'
       script: '(cd docs && make linkcheck)'
-
-    ## Remaining CPython versions on Linux.
-    - python: '3.7'
-      env: 'TASK=test-linux-cpython-3.7'
-
-    - python: '3.6'
-      env: 'TASK=test-linux-cpython-3.6'
 
     ## Test suite on Mac with latest CPython 3 available in Travis's Mac image. Currently this is
     ## 3.6. Set `python: '3.6'` below so this shows up correctly in the Travis web UI. Must set
@@ -166,7 +166,12 @@ matrix:
 
 deploy:
   - provider: 'pypi'
-    user: 'jab'
+    # Enable dpl v2
+    # (as per https://blog.travis-ci.com/2019-08-27-deployment-tooling-dpl-v2-preview-release)
+    # so that `twine check` is run before releasing
+    # (see https://docs.travis-ci.com/user/deployment-v2/providers/pypi/).
+    edge: true
+    username: 'jab'
     password:
       secure: 'B9LLgXkTbtjeC/IbH4wh9PEBzvKEAuYo3EBNW5f1xuLqVqtsysIyxJa5ar/FQ4qwUCBwZPFAXFurN3lLzRhb2Tc04YQ0GYVv6f8lkzwrjoWau4iB9Qt/nnvdRa7KryEJvtenHCAnwoEUaADCjkZjwo6fIA0hEOLB6/AYfhfgXYA='
     skip_existing: true

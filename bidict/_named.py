@@ -11,6 +11,8 @@ from ._abc import BidirectionalMapping
 from ._bidict import bidict
 
 
+# TODO: Provide a statically-typed NamedBidict a la typing.NamedTuple?
+
 def namedbidict(typename, keyname, valname, base_type=bidict):
     r"""Create a new subclass of *base_type* with custom accessors.
 
@@ -51,7 +53,7 @@ def namedbidict(typename, keyname, valname, base_type=bidict):
     if not all(map(str.isidentifier, names)) or keyname == valname:
         raise ValueError(names)
 
-    class _Named(base_type):  # pylint: disable=too-many-ancestors
+    class _Named(base_type):
 
         __slots__ = ()
 
@@ -78,8 +80,8 @@ def namedbidict(typename, keyname, valname, base_type=bidict):
     names = dict(typename=typename, bname=bname, keyname=keyname, valname=valname)
     fdoc = '{typename} forward {bname}: {keyname} → {valname}'.format(**names)
     idoc = '{typename} inverse {bname}: {valname} → {keyname}'.format(**names)
-    setattr(_Named, fname, property(_Named._getfwd, doc=fdoc))  # pylint: disable=protected-access
-    setattr(_Named, iname, property(_Named._getinv, doc=idoc))  # pylint: disable=protected-access
+    setattr(_Named, fname, property(_Named._getfwd, doc=fdoc))
+    setattr(_Named, iname, property(_Named._getinv, doc=idoc))
 
     _Named.__qualname__ = _Named.__qualname__[:-len(_Named.__name__)] + typename
     _Named.__name__ = typename

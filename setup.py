@@ -13,7 +13,6 @@ Ref: https://github.com/pypa/sampleproject/blob/master/setup.py
 import sys
 from codecs import open as c_open
 from os.path import abspath, dirname, join
-from warnings import warn
 
 from setuptools import setup
 
@@ -28,32 +27,28 @@ Also ensure you are using pip >= 9.0.1 to install bidict.
 
 See python3statement.org for more info.
 """
-
 if sys.version_info < (3,):
     sys.exit(PY2_ERR)
-elif sys.version_info < (3, 5):
-    warn('This version of bidict is untested on Python < 3.5 and may not work.')
+
+PY35_ERR = """
+This version of bidict requires Python 3.6 or higher.
+Either use bidict 0.19.0,
+the last release with Python 3.5 support,
+or use Python 3.6+.
+"""
+if sys.version_info < (3, 6):
+    sys.exit(PY35_ERR)
 
 
 CWD = abspath(dirname(__file__))
 
 # Get bidict's package metadata from ./bidict/metadata.py.
 METADATA_PATH = join(CWD, 'bidict', 'metadata.py')
-try:
-    from importlib.util import module_from_spec, spec_from_file_location
-except ImportError:  # Python < 3.5
-    try:
-        from importlib.machinery import SourceFileLoader
-    except ImportError:  # Python < 3.3 - treat as Python 2 (otherwise unsupported).
-        from imp import load_source
-        METADATA = load_source('metadata', METADATA_PATH)
-    else:  # Python 3.3 or 3.4
-        LOADER = SourceFileLoader('metadata', METADATA_PATH)
-        METADATA = LOADER.load_module('metadata')  # pylint: disable=deprecated-method
-else:
-    SPEC = spec_from_file_location('metadata', METADATA_PATH)
-    METADATA = module_from_spec(SPEC)
-    SPEC.loader.exec_module(METADATA)
+# pylint: disable=wrong-import-order,wrong-import-position
+from importlib.util import module_from_spec, spec_from_file_location  # noqa: E402
+SPEC = spec_from_file_location('metadata', METADATA_PATH)
+METADATA = module_from_spec(SPEC)
+SPEC.loader.exec_module(METADATA)
 
 
 with c_open(join(CWD, 'README.rst'), encoding='utf-8') as f:
@@ -85,7 +80,7 @@ TEST_REQS = [
     # pytest's doctest support doesn't support Sphinx extensions
     # (https://www.sphinx-doc.org/en/latest/usage/extensions/doctest.html)
     # so †est the code in the Sphinx docs using Sphinx's own doctest support.
-    DOCS_REQS,
+    *DOCS_REQS,
 ]
 
 # Split out coverage from test requirements since it slows down the tests.
@@ -99,6 +94,7 @@ COVERAGE_REQS = [
 # minor versions manually to have a chance to fix any resulting breakage before it hits CI.
 FLAKE8_REQ = 'flake8 < 3.8'
 PYDOCSTYLE_REQ = 'pydocstyle < 3.1'
+MYPY_REQ = 'mypy == 0.761'
 PYLINT_REQS = [
     # Pin to exact versions of Pylint and Astroid, which don't follow semver.
     # See https://github.com/PyCQA/astroid/issues/651#issuecomment-469021040
@@ -109,6 +105,7 @@ PYLINT_REQS = [
 LINT_REQS = [
     FLAKE8_REQ,
     PYDOCSTYLE_REQ,
+    MYPY_REQ,
 ] + PYLINT_REQS
 
 DEV_REQS = SETUP_REQS + DOCS_REQS + TEST_REQS + COVERAGE_REQS + LINT_REQS + [
@@ -125,6 +122,7 @@ EXTRAS_REQS = dict(
     sphinx=SPHINX_REQS,
     flake8=[FLAKE8_REQ],
     pydocstyle=[PYDOCSTYLE_REQ],
+    mypy=[MYPY_REQ],
     pylint=PYLINT_REQS,
 )
 
@@ -139,19 +137,19 @@ setup(
     author_email=METADATA.__email__,
     description=METADATA.__description__,
     long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/x-rst',
     keywords=METADATA.__keywords__,
     url=METADATA.__url__,
     license=METADATA.__license__,
     packages=['bidict'],
     zip_safe=False,  # Don't zip. (We're zip-safe but prefer not to.)
-    python_requires='>=3',
+    python_requires='>=3.6',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',

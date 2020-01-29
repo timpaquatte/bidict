@@ -8,14 +8,20 @@
 
 """Useful functions for working with bidirectional mappings and related data."""
 
-from collections.abc import Mapping
 from itertools import chain, repeat
+from typing import Iterable, Mapping, Tuple, Union
+
+from ._abc import KT, VT
 
 
 _NULL_IT = repeat(None, 0)  # repeat 0 times -> raise StopIteration from the start
 
 
-def _iteritems_mapping_or_iterable(arg):
+IterPair = Iterable[Tuple[KT, VT]]
+MapOrIterPair = Union[Mapping[KT, VT], IterPair]
+
+
+def _iteritems_mapping_or_iterable(arg: MapOrIterPair) -> IterPair:
     """Yield the items in *arg*.
 
     If *arg* is a :class:`~collections.abc.Mapping`, return an iterator over its items.
@@ -24,14 +30,14 @@ def _iteritems_mapping_or_iterable(arg):
     return iter(arg.items() if isinstance(arg, Mapping) else arg)
 
 
-def _iteritems_args_kw(*args, **kw):
+def _iteritems_args_kw(*args: MapOrIterPair, **kw) -> IterPair:
     """Yield the items from the positional argument (if given) and then any from *kw*.
 
     :raises TypeError: if more than one positional argument is given.
     """
     args_len = len(args)
     if args_len > 1:
-        raise TypeError('Expected at most 1 positional argument, got %d' % args_len)
+        raise TypeError(f'Expected at most 1 positional argument, got {args_len}')
     itemchain = None
     if args:
         arg = args[0]
@@ -40,10 +46,10 @@ def _iteritems_args_kw(*args, **kw):
     if kw:
         iterkw = iter(kw.items())
         itemchain = chain(itemchain, iterkw) if itemchain else iterkw
-    return itemchain or _NULL_IT
+    return itemchain or _NULL_IT  # type: ignore
 
 
-def inverted(arg):
+def inverted(arg: MapOrIterPair) -> IterPair:
     """Yield the inverse items of the provided object.
 
     If *arg* has a :func:`callable` ``__inverted__`` attribute,

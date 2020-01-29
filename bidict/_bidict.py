@@ -26,13 +26,14 @@
 #==============================================================================
 
 
-"""Provides :class:`bidict`."""
+"""Provide :class:`bidict`."""
 
+from ._abc import KT, VT
 from ._mut import MutableBidict
 from ._delegating import _DelegatingMixin
 
 
-class bidict(_DelegatingMixin, MutableBidict):  # noqa: N801; pylint: disable=invalid-name
+class bidict(_DelegatingMixin, MutableBidict[KT, VT]):
     """Base class for mutable bidirectional mappings."""
 
     __slots__ = ()

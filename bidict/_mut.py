@@ -26,27 +26,30 @@
 #==============================================================================
 
 
-"""Provides :class:`bidict`."""
+"""Provide :class:`MutableBidict`."""
 
-from collections.abc import MutableMapping
+from typing import Any, Mapping, Tuple
 
-from ._base import BidictBase
-from ._dup import ON_DUP_RAISE, ON_DUP_DROP_OLD
+from ._abc import MutableBidirectionalMapping
+from ._base import KT, VT, MapOrIterPair, BidictBase
+from ._dup import ON_DUP_RAISE, ON_DUP_DROP_OLD, OnDup
 from ._sntl import _MISS
 
 
-# Extend MutableMapping explicitly because it doesn't implement __subclasshook__, as well as to
-# inherit method implementations it provides that we can reuse (namely `setdefault`).
-class MutableBidict(BidictBase, MutableMapping):
+# Extend MutableBidirectionalMapping explicitly to (transitively) inherit from MutableMapping.
+# This way we inherit useful method implementations it provides, namely `setdefault`.
+# This also makes sure MutableBidict is a MutableMapping subclass, since MutableMapping doesn't
+# implement __subclasshook__.
+class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
     """Base class for mutable bidirectional mappings."""
 
     __slots__ = ()
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: KT) -> None:
         """*x.__delitem__(y)　⟺　del x[y]*"""
         self._pop(key)
 
-    def __setitem__(self, key, val):
+    def __setitem__(self, key: KT, val: VT) -> None:
         """Set the value for *key* to *val*.
 
         If *key* is already associated with *val*, this is a no-op.
@@ -74,7 +77,7 @@ class MutableBidict(BidictBase, MutableMapping):
         """
         self._put(key, val, self.on_dup)
 
-    def put(self, key, val, on_dup=ON_DUP_RAISE):
+    def put(self, key: KT, val: VT, on_dup: OnDup = ON_DUP_RAISE) -> None:
         """Associate *key* with *val*, honoring the :class:`OnDup` given in *on_dup*.
 
         For example, if *on_dup* is :attr:`~bidict.ON_DUP_RAISE`,
@@ -100,7 +103,7 @@ class MutableBidict(BidictBase, MutableMapping):
         """
         self._put(key, val, on_dup)
 
-    def forceput(self, key, val):
+    def forceput(self, key: KT, val: VT) -> None:
         """Associate *key* with *val* unconditionally.
 
         Replace any existing mappings containing key *key* or value *val*
@@ -108,12 +111,12 @@ class MutableBidict(BidictBase, MutableMapping):
         """
         self._put(key, val, ON_DUP_DROP_OLD)
 
-    def clear(self):
+    def clear(self) -> None:
         """Remove all items."""
         self._fwdm.clear()
         self._invm.clear()
 
-    def pop(self, key, default=_MISS):
+    def pop(self, key: KT, default=_MISS) -> Any:
         """*x.pop(k[, d]) → v*
 
         Remove specified key and return the corresponding value.
@@ -127,7 +130,7 @@ class MutableBidict(BidictBase, MutableMapping):
                 raise
             return default
 
-    def popitem(self):
+    def popitem(self) -> Tuple[KT, VT]:
         """*x.popitem() → (k, v)*
 
         Remove and return some item as a (key, value) pair.
@@ -140,16 +143,16 @@ class MutableBidict(BidictBase, MutableMapping):
         del self._invm[val]
         return key, val
 
-    def update(self, *args, **kw):  # pylint: disable=arguments-differ
+    def update(self, *args: MapOrIterPair, **kw: Mapping[KT, VT]) -> None:
         """Like calling :meth:`putall` with *self.on_dup* passed for *on_dup*."""
         if args or kw:
             self._update(False, self.on_dup, *args, **kw)
 
-    def forceupdate(self, *args, **kw):
+    def forceupdate(self, *args: MapOrIterPair, **kw: Mapping[KT, VT]):
         """Like a bulk :meth:`forceput`."""
         self._update(False, ON_DUP_DROP_OLD, *args, **kw)
 
-    def putall(self, items, on_dup=ON_DUP_RAISE):
+    def putall(self, items: MapOrIterPair, on_dup: OnDup = ON_DUP_RAISE):
         """Like a bulk :meth:`put`.
 
         If one of the given items causes an exception to be raised,

@@ -26,7 +26,7 @@ from bidict import (
     inverted,
 )
 from bidict.compat import PYPY
-from bidict._util import _iteritems_args_kw  # pylint: disable=protected-access
+from bidict._util import _iteritems_args_kw
 
 from . import _strategies as st
 
@@ -123,7 +123,6 @@ def test_bijectivity(bi):
 @given(st.BI_AND_CMPDICT_FROM_SAME_ITEMS, st.ARGS_BY_METHOD)
 def test_consistency_after_method_call(bi_and_cmp_dict, args_by_method):
     """A bidict should be left in a consistent state after calling any method, even if it raises."""
-    # pylint: disable=too-many-locals
     bi_orig, cmp_dict_orig = bi_and_cmp_dict
     for (_, methodname), args in args_by_method.items():
         if not hasattr(bi_orig, methodname):
@@ -134,7 +133,7 @@ def test_consistency_after_method_call(bi_and_cmp_dict, args_by_method):
             result = method(*args)
         except (KeyError, BidictException) as exc:
             # Call should fail clean, i.e. bi should be in the same state it was before the call.
-            assertmsg = '%r did not fail clean: %r' % (method, exc)
+            assertmsg = f'{method!r} did not fail clean: {exc!r}'
             assert bi == bi_orig, assertmsg
             assert bi.inv == bi_orig.inv, assertmsg
         else:
@@ -147,7 +146,7 @@ def test_consistency_after_method_call(bi_and_cmp_dict, args_by_method):
                     coll = list if isinstance(bi, OrderedBidictBase) else set
                     result = coll(result)
                     cmp_result = coll(cmp_result)
-                assert result == cmp_result, 'methodname=%s, args=%r' % (methodname, args)
+                assert result == cmp_result, f'methodname={methodname}, args={args!r}'
         # Whether the call failed or succeeded, bi should pass consistency checks.
         assert len(bi) == sum(1 for _ in bi.items())
         assert len(bi.inv) == sum(1 for _ in bi.inv.items())
@@ -247,14 +246,14 @@ def test_namedbidict_raises_on_invalid_base_type(names, invalid_base_type):
 @given(st.NAMEDBIDICTS)
 def test_namedbidict(nb):
     """Test :func:`bidict.namedbidict` custom accessors."""
-    valfor = getattr(nb, nb._valname + '_for')  # pylint: disable=protected-access
-    keyfor = getattr(nb, nb._keyname + '_for')  # pylint: disable=protected-access
+    valfor = getattr(nb, nb._valname + '_for')
+    keyfor = getattr(nb, nb._keyname + '_for')
     assert all(valfor[key] == val for (key, val) in nb.items())
     assert all(keyfor[val] == key for (key, val) in nb.items())
     # The same custom accessors should work on the inverse.
     inv = nb.inv
-    valfor = getattr(inv, nb._valname + '_for')  # pylint: disable=protected-access
-    keyfor = getattr(inv, nb._keyname + '_for')  # pylint: disable=protected-access
+    valfor = getattr(inv, nb._valname + '_for')
+    keyfor = getattr(inv, nb._keyname + '_for')
     assert all(valfor[key] == val for (key, val) in nb.items())
     assert all(keyfor[val] == key for (key, val) in nb.items())
 
@@ -266,7 +265,7 @@ def test_bidict_isinv_getstate(bi):
     """
     # Nothing to assert; making sure these calls don't raise is sufficient.
     # pylint: disable=pointless-statement
-    bi._isinv  # pylint: disable=pointless-statement,protected-access
+    bi._isinv  # pylint: disable=pointless-statement
     bi.__getstate__()  # pylint: disable=pointless-statement
 
 
@@ -303,7 +302,7 @@ def test_refcycle_orderedbidict_nodes(ob_cls, init_items):
     gc.disable()
     try:
         ob = ob_cls(init_items)
-        node_refs = [ref(node) for node in ob._fwdm.values()]  # pylint: disable=protected-access
+        node_refs = [ref(node) for node in ob._fwdm.values()]
         assert all(r() is not None for r in node_refs)
         del ob
         assert all(r() is None for r in node_refs)
@@ -320,10 +319,10 @@ def test_slots(bi_cls):
         if cls in stop_at:
             break
         slots = cls.__dict__.get('__slots__')
-        assert slots is not None, 'Expected %r to define __slots__' % cls
+        assert slots is not None, f'Expected {cls!r} to define __slots__'
         for slot in slots:
             seen_at = cls_by_slot.get(slot)
-            assert not seen_at, '%r repeats slot %r declared first by %r' % (seen_at, slot, cls)
+            assert not seen_at, f'{seen_at!r} repeats slot {slot!r} declared first by {cls!r}'
             cls_by_slot[slot] = cls
 
 

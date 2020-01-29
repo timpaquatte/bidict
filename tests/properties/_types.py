@@ -31,7 +31,7 @@ class _FrozenDict(KeysView, Mapping):
         return self._mapping[key]
 
     def __hash__(self):
-        return ItemsView(self._mapping)._hash()  # pylint: disable=protected-access
+        return ItemsView(self._mapping)._hash()
 
 
 NON_BIDICT_MAPPING_TYPES = (dict, OrderedDict, _FrozenDict)

@@ -2,8 +2,22 @@
 
 [MESSAGES CONTROL]
 disable =
-  # Must inherit from object for Python 2 compatibility.
-  useless-object-inheritance,
+  # Gives false positive for MutableBidirectionalMapping:
+  abstract-method,
+  # Gives false positive for MutableBidict.update:
+  arguments-differ,
+  # Gives lots of false positives:
+  no-member,
+  # The default of 7 results in flagging all bidict classes:
+  too-many-ancestors,
+  bad-continuation,
+  super-init-not-called,
+  too-few-public-methods,
+  too-many-branches,
+  too-many-locals,
+  invalid-name,
+  protected-access,
+  fixme,
   # repeated-keyword check is buggy:
   # https://github.com/PyCQA/pylint/issues/1843#issuecomment-419746286
   repeated-keyword,
@@ -12,7 +26,6 @@ disable =
 ignore = _version.py
 
 # Maximum number of parents for a class.
-# The default of 7 results in "too-many-ancestors" for all bidict classes.
 max-parents = 13
 
 # Maximum number of arguments for a function.
